@@ -116,9 +116,19 @@ void setup() {
     // UART2: RX = GPIO17 (from FPGA GPIO[1]), TX = GPIO16 (unused here)
     FpgaSerial.begin(FPGA_BAUD, SERIAL_8N1, PIN_FPGA_RX, PIN_FPGA_TX);
 
-    // OLED
+    // OLED — give module time to power up before init
+    delay(200);
     Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL);
+    Wire.setTimeOut(500);   // prevent I2C from hanging indefinitely
     oledOk = oled.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDR);
+    Serial.printf("[OLED] begin() returned %s (addr=0x%02X)\n",
+                  oledOk ? "true" : "false", OLED_I2C_ADDR);
+    if (!oledOk) {
+        // Try alternate address 0x3D
+        oledOk = oled.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+        Serial.printf("[OLED] retry 0x3D returned %s\n",
+                      oledOk ? "true" : "false");
+    }
     if (!oledOk) {
         Serial.println("[!] OLED not found — continuing without display");
     } else {
